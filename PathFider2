@@ -1,0 +1,169 @@
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Stack;
+
+public class PathFinder {
+
+	private ArrayList<GridMember> neighbors, visited;
+
+	private int xStart, yStart;
+	private int xTarget, yTarget;
+
+	private boolean goalReached;
+	private boolean isVisited = false;
+    
+	private Stack<GridMember> path ;
+	public static final int GRID_MEMBER_SIZE = 32;
+
+	public PathFinder(int someX, int someY, int targetX, int targetY) {
+		goalReached = false;
+		xStart = someX / GRID_MEMBER_SIZE;
+		yStart = someY / GRID_MEMBER_SIZE;
+
+		xTarget = targetX / GRID_MEMBER_SIZE;
+		yTarget = targetY / GRID_MEMBER_SIZE;
+
+		GridMember previousNode = null;
+		neighbors = new ArrayList<GridMember>();
+		visited = new ArrayList<GridMember>();
+
+		// Add the Spawned node
+		neighbors.add(new GridMember(xStart, yStart, xTarget, yTarget,
+				previousNode));
+
+		findPath();
+
+	}
+
+	public void findPath() {
+
+		ArrayList<GridMember> neighborsOfCurrentNode;
+
+		while (!neighbors.isEmpty() && !goalReached) {
+
+			GridMember currentNode = neighbors.remove(0);
+			visited.add(currentNode);
+			neighborsOfCurrentNode = currentNode.findNeighbors();
+
+			while (!neighborsOfCurrentNode.isEmpty()) {
+
+				// Head of the list contains the lowest cost Grid Member
+				GridMember newNeighborOfCurrentNode = neighborsOfCurrentNode
+						.get(0);
+
+				// If we have reached goal we indicate that we have reached
+				// destination
+				// and exit
+				if (newNeighborOfCurrentNode.getCostToGoal() == 0) {
+					System.out.println("Goal Reached");
+
+					goalReached = true;
+
+					tracePath(newNeighborOfCurrentNode);
+				}
+
+				// We check if the new neighbor of the current node is already
+				// visited or not
+				isVisited = false;
+				checkVisitedList(newNeighborOfCurrentNode);
+
+				if (!isVisited) {
+					// check against all neighbors if current neighbor is not
+					// visited
+
+					checkUnvisitedNeighbors(newNeighborOfCurrentNode,
+							currentNode);
+				}
+
+			}
+
+			// Sort the neighbor list
+			Comparator<GridMember> members = new Comparator<GridMember>() {
+				public int compare(GridMember neighbor1, GridMember neighbor2) {
+					Integer totalCost1 = neighbor1.getTotalCost();
+					Integer totalCost2 = neighbor2.getTotalCost();
+					return totalCost1.compareTo(totalCost2);
+				}
+			};
+			neighbors.sort(members);
+		}// while neighbor
+
+	}
+
+	private void checkUnvisitedNeighbors(GridMember newNeighborOfCurrentNode,
+			GridMember currentNode) {
+		for (int i = 0; i < neighbors.size(); i++) {
+
+			GridMember neighborObject = neighbors.get(i);
+
+			// if the 2 objects have same location then we want to
+			// compare their
+			// cost from source so that we can calculate our new
+			// cost to target
+
+			if (neighborObject.getxIndex() == newNeighborOfCurrentNode
+					.getxIndex()
+					&& neighborObject.getyIndex() == newNeighborOfCurrentNode
+							.getyIndex()) {
+
+				if (newNeighborOfCurrentNode.getCostFromStart() < neighborObject
+						.getCostFromStart()) {
+					neighborObject.setCostFromStart(newNeighborOfCurrentNode
+							.getCostFromStart());
+
+					neighborObject.setPrevious(currentNode); // set current as
+																// previous node
+																// of this
+																// neighbor
+				}
+			}
+
+			if (neighborObject.getxIndex() != newNeighborOfCurrentNode
+					.getxIndex()
+					&& neighborObject.getyIndex() != newNeighborOfCurrentNode
+							.getyIndex()) {
+
+				neighbors.add(newNeighborOfCurrentNode);
+
+			}
+
+		}// for
+	}
+
+	private void checkVisitedList(GridMember newNeighborOfCurrentNode) {
+
+		for (int i = 0; i < visited.size(); i++) {
+			int x, y;
+
+			GridMember visitedObject = visited.get(i);
+			x = visitedObject.getxIndex();
+			y = visitedObject.getyIndex();
+
+			if (x == newNeighborOfCurrentNode.getxIndex()
+					&& y == newNeighborOfCurrentNode.getyIndex()) {
+				// do not visit again and do not check neighbors
+				isVisited = true;
+
+			}
+
+		}// for
+
+	}// checkVisitedList
+
+	private void tracePath(GridMember newNeighborOfCurrentNode) {
+
+		path = new Stack<GridMember>();
+		while (newNeighborOfCurrentNode!= null){
+			
+			GridMember current = newNeighborOfCurrentNode.getPrevious();
+			path.push(newNeighborOfCurrentNode);
+			newNeighborOfCurrentNode = current;
+		}
+	}
+	
+	public Stack<GridMember> getPath(){
+		return path;
+	}
+
+}
